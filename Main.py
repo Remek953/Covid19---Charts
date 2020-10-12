@@ -6,17 +6,15 @@ def menu():
     while choice != '4':
         print("""
 
---------------------
-|       Menu       |
---------------------
-|   1 - Choose Country   |
---------------------
-|   2 - Download newest file   |
---------------------
-|   3 - About Program   |
---------------------
-|   4 - Exit       |
---------------------
+MENU:
+1 - Choose Country   
+
+2 - Download newest file   
+
+3 - About Program   
+
+4 - Exit       
+
          """)
         choice = input("Choice: ")
         print()
@@ -24,16 +22,11 @@ def menu():
         # NewGame
         if choice == "1":
 
-            player = create_character()
-            battle_intro()
-            battle(player)
             return main_menu()
 
         # Scores
         elif choice == "2":
-            download_file(file_url)
-            time.sleep(1)
-            print("You got newest Covid data")
+
             return main_menu()
 
         # About Me
