@@ -7,7 +7,11 @@ def menu():
         print("""
 
 MENU:
+1 - Global Info
+
 1 - Choose Country   
+
+2 - List of the Countries
 
 2 - Download newest file   
 
