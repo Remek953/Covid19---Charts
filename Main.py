@@ -7,17 +7,22 @@ def menu():
         print("""
 
 MENU:
+
 1 - Global Info
 
-1 - Choose Country   
+2 - Global Charts
 
-2 - List of the Countries
+3 - List of the Countries
 
-2 - Download newest file   
+4 - Choose Country - Info
 
-3 - About Program   
+5 - Choose Country - Charts
 
-4 - Exit       
+6 - Download newest file   
+
+7 - About Program   
+
+8 - Exit       
 
          """)
         choice = input("Choice: ")
