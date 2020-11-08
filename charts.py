@@ -1,9 +1,8 @@
+
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
 import requests
-
-
 
 
 def download_file():
@@ -17,9 +16,9 @@ def download_file():
 def read_file():
     global df
     try:
-        df = pd.read_csv('covid.csv')
+        df = pd.read_csv('covid.csv',   parse_dates=True)
         df.rename(columns={'countriesAndTerritories': 'Country'}, inplace=True)
-        df['dateRep'] = pd.to_datetime(df['dateRep'])
+        df['dateRep'] = pd.to_datetime(df['dateRep'], dayfirst=True)
 
     except IOError:
         print("The file doesnt exist.")
@@ -28,10 +27,13 @@ def read_file():
 
 
 def date_info():
-    df['dateRep'] = df['dateRep'].dt.date
+    df_info = df.copy()
+    df_info['dateRep'] = df_info['dateRep'].dt.date
     print("\n")
-    print(f"Covid data is from {df['dateRep'].min()} to {df['dateRep'].max()}.")
-    print(f"The total time of the covid pandemic data collected: {df['dateRep'].max() - df['dateRep'].min()}.\n")
+    print(f"Covid data is from {df_info['dateRep'].min()} to {df_info['dateRep'].max()}.")
+    print(f"The total time of the covid pandemic data collected: {df_info['dateRep'].max() - df_info['dateRep'].min()}.")
+    print(f"The total number of cases: {df_info['cases'].sum()}.")
+    print(f"The total number of deaths: {df_info['deaths'].sum()}.\n")
 
 
 def list_of_countries():
@@ -125,50 +127,39 @@ the_country_ratio(country_name)
 """
 
 ###################################
-read_file()
-
-pol = (df['Country'] == 'Poland')
-dfpol = df.loc[pol]
-
-dates = dfpol['dateRep'][::-1]
-cases = dfpol['cases'][::-1]
-#
-deaths = dfpol['deaths'][::-1]
-#
-sum_of_c_d = [cases.sum(), deaths.sum()]
 
 
-def global_charts_deaths():
+def the_most_country_charts():
     fig, axs = plt.subplots(ncols=2, figsize=(10,8))
 
     grouped_values = df.groupby('Country').sum().reset_index()
-    global_high_deaths = grouped_values.nlargest(5, ['deaths']).sort_values('deaths')
+    global_high_deaths = grouped_values.nlargest(5, ['cases']).sort_values('cases')
 
-    global_deaths = sns.barplot(x='Country', y='deaths', palette='YlOrRd', data=global_high_deaths , ax=axs[0])
+    global_deaths = sns.barplot(x='Country', y='cases', palette='YlOrRd', data=global_high_deaths , ax=axs[0],)
 
     for p in global_deaths.patches:
         global_deaths.annotate(format(p.get_height(), '.1f'),
                                (p.get_x() + p.get_width() / 2., p.get_height()),
                                ha='center', va='center',
-                               xytext=(0, -12),
+                               xytext=(0, 5),
                                textcoords='offset points')
-
+    axs[0].ticklabel_format(style='plain',  axis='y')
     axs[0].xaxis.get_majorticklabels()[0].set_y(-.03)
     axs[0].xaxis.get_majorticklabels()[2].set_y(-.03)
     axs[0].xaxis.get_majorticklabels()[4].set_y(-.03)
 
     axs[0].set_xlabel('Countries', size=14)
-    axs[0].set_ylabel('Number of deaths', size=14)
+    axs[0].set_ylabel('Number of cases', size=14)
     axs[0].grid(axis="y",linestyle='dashed', color='w')
-    axs[0].set_title("The 5 countries with the highest total deaths", size=12)
+    axs[0].set_title("The 5 countries with the highest total cases", size=12)
 
-    global_high_cases = grouped_values.nlargest(5, ['cases']).sort_values('cases')
-    global_cases = sns.barplot(x='Country', y='cases', palette='YlOrRd', data=global_high_cases, ax=axs[1])
+    global_high_cases = grouped_values.nlargest(5, ['deaths']).sort_values('deaths')
+    global_cases = sns.barplot(x='Country', y='deaths', palette='CMRmap_r', data=global_high_cases, ax=axs[1])
     for p in global_cases.patches:
         global_cases.annotate(format(p.get_height(), '.1f'),
                                (p.get_x() + p.get_width() / 2., p.get_height()),
                                ha='center', va='center',
-                               xytext=(0, -12),
+                               xytext=(0, 5),
                                textcoords='offset points')
 
     axs[1].set_xlabel('Countries', size=14)
@@ -177,66 +168,101 @@ def global_charts_deaths():
     axs[1].xaxis.get_majorticklabels()[2].set_y(-.03)
     axs[1].xaxis.get_majorticklabels()[4].set_y(-.03)
 
-    #ticks_and_labels = plt.xticks(range(len(global_largest1['Country'])), global_largest1['Country'], rotation=0)
-    #for i, label in enumerate(ticks_and_labels[1]):
-     #   label.set_y(label.get_position()[1] - (i % 2) * 0.05)
-
-    axs[1].set_ylabel('Number of cases', size=14)
-    axs[1].set_title("The 5 countries with the highest total cases", size=12)
+    axs[1].set_ylabel('Number of deaths', size=14)
+    axs[1].set_title("The 5 countries with the highest total deaths", size=12)
     axs[1].grid(axis="y",linestyle='dashed', color='w')
 
-    plt.show()
-
-global_charts_deaths()
-
-def dates_cases(dates, deaths):
-    plt.plot(dates, deaths)
-
-    plt.title("Square Numbers", fontsize=24)
-    plt.xlabel("Date")
-    plt.ylabel("Cases")
-    plt.show()
-
-
-def cases_deaths(sum_of_c_d):
-
-    explode = [0, 0.1]
-
-    plt.pie(sum_of_c_d, explode = explode, shadow=True, startangle=0, autopct='%1.1f%%',
-        wedgeprops={'edgecolor': 'black'})
-
-    plt.title('Cases/Deaths ratio in Poland')
-    plt.tight_layout()
-    plt.savefig('plot3.png')
-    plt.show()
-
-
-def charts_of_2(dates, cases, deaths):
-    plt.bar(dates, cases,
-         color = 'y', label='Cases')
-    plt.plot(dates, deaths)
-
-    plt.xlabel('Ages')
-    plt.ylabel('Median Salary (USD')
-    plt.title('Median Salary (USD) by Age')
-
-    plt.legend()
     plt.tight_layout()
     plt.show()
 
 
-###############################
-"""
-import seaborn as sns
-plt.figure(figsize=(5,5))
-#plt.gca().invert_yaxis()
-country_grp = df.groupby(['countriesAndTerritories']).sum()
-deaths = country_grp['deaths'].nlargest(5).sort_values()
-deaths.plot.bar( align='center', alpha=0.6)
+def total_numbers_charts():
+    groupedmonths = df.groupby(df['dateRep'].dt.to_period('M')).sum()
+    groupedmonths = groupedmonths.resample('M').asfreq().fillna(0)
+    groupedmonths['dateRep']=groupedmonths.index
 
-plt.xticks()
-plt.xlabel('Countries', size=12)
-plt.ylabel('Number of deaths', size=12)
-plt.title("The 5 countries with the highest total deaths", size=12)
-"""
-############################
+    fig, axs = plt.subplots(ncols=2, figsize=(10, 8))
+    global_cases = sns.barplot(x='dateRep', y='cases', palette='YlOrRd', data=groupedmonths, ax=axs[0])
+
+    for p in global_cases.patches:
+        global_cases.annotate(format(p.get_height(), '.1f'),
+                               (p.get_x() + p.get_width() / 2., p.get_height()),
+                               ha='center', va='center',
+                               xytext=(0, 5),
+                               size=8,
+                               textcoords='offset points')
+
+    axs[0].ticklabel_format(style='plain', axis='y')
+    axs[0].set_xlabel('Date', size=14)
+    axs[0].set_ylabel('Number of cases', size=14)
+    axs[0].grid(axis="y",linestyle='dashed', color='w')
+    axs[0].set_title("The total number of cases over months", size=12)
+
+    global_deaths = sns.barplot(x='dateRep', y='deaths', palette='PuBuGn', data=groupedmonths, ax=axs[1])
+
+    for p in global_deaths.patches:
+        global_deaths.annotate(format(p.get_height(), '.1f'),
+                               (p.get_x() + p.get_width() / 2., p.get_height()),
+                               ha='center', va='center',
+                               xytext=(0, 5),
+                               size=8,
+                               textcoords='offset points')
+
+    axs[1].set_xlabel('Date', size=14)
+    axs[1].set_ylabel('Number of deaths', size=14)
+    axs[1].grid(axis="y", linestyle='dashed', color='w')
+    axs[1].set_title("The total number of deaths over months", size=12)
+
+    for label in axs[0].get_xmajorticklabels() + axs[1].get_xmajorticklabels():
+        label.set_rotation(30)
+        label.set_horizontalalignment("right")
+
+    plt.tight_layout()
+    plt.show()
+
+
+def cases_deaths_charts():
+    pd.plotting.register_matplotlib_converters()
+    groupedmonths = df.groupby(df['dateRep'].dt.to_period('M')).sum()
+    groupedmonths = groupedmonths.resample('M').asfreq().fillna(0)
+    groupedmonths['dateRep']=groupedmonths.index
+
+    fig, ax1 = plt.subplots(figsize=(10, 8))
+
+    global_cases = sns.barplot(x='dateRep', y='cases', palette='CMRmap_r', data=groupedmonths, ax=ax1)
+
+    for p in global_cases.patches:
+        global_cases.annotate(format(p.get_height(), '.1f'),
+                               (p.get_x() + p.get_width() / 2., p.get_height()),
+                               ha='center', va='center',
+                               xytext=(0, 5),
+                               size=8,
+                               textcoords='offset points')
+
+    ax1.ticklabel_format(style='plain', axis='y')
+    ax1.xaxis.set_tick_params(rotation=45,)
+    ax1.set_xlabel('Date', size=14)
+    ax1.set_ylabel('Number of cases', size=14, color='gray')
+    ax1.grid(axis="y",linestyle='dashed', color='w')
+    ax1.set_title("The total number of cases and deaths over months", size=16)
+
+    ax2 = ax1.twinx()
+    color = 'tab:red'
+
+    ax2 = sns.lineplot(x=groupedmonths['dateRep'].dt.to_timestamp('s').dt.strftime('%Y-%m'), y='deaths', data=groupedmonths, sort=False, color=color,  marker='o', ax=ax2)
+    ax2.set_ylabel('Number of deaths ', fontsize=14, color=color)
+    ax2.tick_params(axis='y', color=color)
+    plt.show()
+
+def the_country_ratio_charts():
+    country_group12 = df.sum()
+
+    plot = country_group12.plot.pie(y='cases', title="Title", legend=False, \
+                       autopct='%1.1f%%', explode=(0, 0, 0.1), \
+                       shadow=True, startangle=0)
+    plt.show()
+
+read_file()
+
+the_most_country_charts()
+total_numbers_charts()
