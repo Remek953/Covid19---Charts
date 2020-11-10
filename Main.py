@@ -3,7 +3,7 @@ import sys
 def menu():
     choice = None
 
-    while choice != '4':
+    while choice != '8':
         print("""
 
 MENU:
@@ -28,18 +28,18 @@ MENU:
         choice = input("Choice: ")
         print()
 
-        # NewGame
-        if choice == "1":
+
+        if choice == "1" or choice.lower() == "global info":
 
             return main_menu()
 
-        # Scores
-        elif choice == "2":
+
+        elif choice == "2" or choice.lower() == "global charts":
 
             return main_menu()
 
-        # About Me
-        elif choice == "3":
+
+        elif choice == "3" or choice.lower() == "list of the countries":
             about_me()
             print('\n====press KEY and ENTER to return====')
             key = input('>>>')
@@ -47,7 +47,7 @@ MENU:
                 return main_menu()
 
         # Exit
-        elif choice == "4":
+        elif choice == "8":
             print("Goodbye!")
             time.sleep(1)
             sys.exit()

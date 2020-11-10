@@ -1,7 +1,7 @@
-
 import pandas as pd
-import seaborn as sns
 from matplotlib import pyplot as plt
+import seaborn as sns
+import datetime
 import requests
 
 
@@ -44,7 +44,7 @@ def list_of_countries():
     print(countries)
 
 
-#####################################################################
+################################################################
 def the_most_global():
     country_grp = df.groupby(['Country']).sum()
     cases = country_grp['cases'].nlargest(5)
@@ -77,7 +77,7 @@ the_most_global()
 the_most_global_daily()
 the_most_ratio()
 """
-#####################################################################
+################################################################
 
 
 def check_country():
@@ -86,12 +86,12 @@ def check_country():
     for item in df['Country'].unique():
         countries.append(item.title())
 
-    while name.title() not in countries or name.title() != 'x':
+    while name.title() not in countries:
+        if name.lower() == 'x':
+            print('success')
+            break
         print("Wrong.")
         name = input("Please enter valid country name or enter 'x' to exit.")
-    if name.lower() == 'x':
-        print('success')
-
     return name.title()
 
 
@@ -126,7 +126,7 @@ the_most_country_daily(country_name)
 the_country_ratio(country_name)
 """
 
-###################################
+################################################################
 
 
 def the_most_country_charts():
@@ -254,15 +254,164 @@ def cases_deaths_charts():
     ax2.tick_params(axis='y', color=color)
     plt.show()
 
-def the_country_ratio_charts():
-    country_group12 = df.sum()
+################################################################
 
-    plot = country_group12.plot.pie(y='cases', title="Title", legend=False, \
-                       autopct='%1.1f%%', explode=(0, 0, 0.1), \
-                       shadow=True, startangle=0)
+
+def check_country_charts():
+    name = str(input("Please enter country name: "))
+    countries = []
+    for item in df['Country'].unique():
+        countries.append(item.title())
+
+    while name.title() not in countries:
+        if name.lower() == 'x':
+            print('success')
+            break
+        print("Wrong.")
+        name = input("Please enter valid country name or enter 'x' to exit.")
+    return name.title()
+
+
+def the_most_country_charts(country_name_charts):
+
+    country_name = (df['Country'] == country_name_charts)
+    country = df.loc[country_name]
+
+    groupedmonths = country.groupby(country['dateRep'].dt.to_period('M')).sum()
+    groupedmonths = groupedmonths.resample('M').asfreq().fillna(0)
+    groupedmonths['dateRep'] = groupedmonths.index
+
+    fig, axs = plt.subplots(ncols=2, figsize=(10, 8))
+    global_cases = sns.barplot(x='dateRep', y='cases', palette='YlOrRd', data=groupedmonths, ax=axs[0])
+
+    for p in global_cases.patches:
+        global_cases.annotate(format(p.get_height(), '.1f'),
+                              (p.get_x() + p.get_width() / 2., p.get_height()),
+                              ha='center', va='center',
+                              xytext=(0, 5),
+                              size=8,
+                              textcoords='offset points')
+
+    axs[0].ticklabel_format(style='plain', axis='y')
+    axs[0].set_xlabel('Date', size=14)
+    axs[0].set_ylabel('Number of cases', size=14)
+    axs[0].grid(axis="y", linestyle='dashed', color='w')
+    axs[0].set_title(f"The total number of cases in {country_name_charts}", size=12)
+
+    global_deaths = sns.barplot(x='dateRep', y='deaths', palette='PuBuGn', data=groupedmonths, ax=axs[1])
+
+    for p in global_deaths.patches:
+        global_deaths.annotate(format(p.get_height(), '1.0f'),
+                               (p.get_x() + p.get_width() / 2., p.get_height()),
+                               ha='center', va='center',
+                               xytext=(0, 5),
+                               size=8,
+                               textcoords='offset points')
+
+    axs[1].set_xlabel('Date', size=14)
+    axs[1].set_ylabel('Number of deaths', size=14)
+    axs[1].grid(axis="y", linestyle='dashed', color='w')
+    axs[1].set_title(f"The total number of deaths in {country_name_charts}", size=12)
+
+    for label in axs[0].get_xmajorticklabels() + axs[1].get_xmajorticklabels():
+        label.set_rotation(30)
+        label.set_horizontalalignment("right")
+
+    plt.tight_layout()
     plt.show()
 
-read_file()
 
-the_most_country_charts()
-total_numbers_charts()
+def cases_deaths_country_charts(country_name_charts):
+    pd.plotting.register_matplotlib_converters()
+    country_name = (df['Country'] == country_name_charts)
+    country = df.loc[country_name]
+
+    groupedmonths = country.groupby(country['dateRep'].dt.to_period('M')).sum()
+    groupedmonths = groupedmonths.resample('M').asfreq().fillna(0)
+    groupedmonths['dateRep'] = groupedmonths.index
+
+    fig, ax1 = plt.subplots(figsize=(10, 8))
+
+    global_cases = sns.barplot(x='dateRep', y='cases', palette='CMRmap_r', data=groupedmonths, ax=ax1)
+
+    for p in global_cases.patches:
+        global_cases.annotate(format(p.get_height(), '1.0f'),
+                               (p.get_x() + p.get_width() / 2., p.get_height()),
+                               ha='center', va='center',
+                               xytext=(0, 5),
+                               size=8,
+                               textcoords='offset points')
+
+    ax1.ticklabel_format(style='plain', axis='y')
+    ax1.xaxis.set_tick_params(rotation=45,)
+    ax1.set_xlabel('Date', size=14)
+    ax1.set_ylabel('Number of cases', size=14, color='gray')
+    ax1.grid(axis="y",linestyle='dashed', color='w')
+    ax1.set_title(f"The total number of cases and deaths in {country_name_charts}", size=16)
+
+    ax2 = ax1.twinx()
+    color = 'tab:red'
+
+    ax2 = sns.lineplot(x=groupedmonths['dateRep'].dt.to_timestamp('s').dt.strftime('%Y-%m'), y='deaths', data=groupedmonths, sort=False, color=color,  marker='o', ax=ax2)
+    ax2.set_ylabel('Number of deaths ', fontsize=14, color=color)
+    ax2.tick_params(axis='y', color=color)
+    plt.show()
+
+
+def last_14_days(country_name_charts):
+    pd.plotting.register_matplotlib_converters()
+    country_name = (df['Country'] == country_name_charts)
+    country = df.loc[country_name]
+
+    groupeddays = country.groupby(country['dateRep'].dt.to_period('D')).sum()
+    groupeddays = groupeddays.resample('D').asfreq().fillna(0)
+    groupeddays['dateRep'] = groupeddays.index
+    days_14 = datetime.datetime.now() - pd.to_timedelta("14day")
+    result = groupeddays[groupeddays.dateRep > days_14.strftime('%d/%m/%y')]
+
+    fig, axs = plt.subplots(ncols=2, figsize=(10, 8))
+    global_cases = sns.barplot(x='cases', y='dateRep', palette='YlOrRd', data=result, ax=axs[0])
+
+    for p in global_cases.patches:
+        width = p.get_width()  # get bar length
+        global_cases.text(width + 1,  # set the text at 1 unit right of the bar
+                p.get_y() + p.get_height() / 2,  # get Y coordinate + X coordinate / 2
+                '{:1.0f}'.format(width),  # set variable to display, 2 decimals
+                ha='left',  # horizontal alignment
+                va='center') # vertical alignment
+
+    axs[0].set_xlabel('Number of cases', size=14)
+    axs[0].set_ylabel('', size=14)
+    axs[0].grid(axis="x", linestyle='dashed', color='w')
+    axs[0].set_title(f"The total number of cases in {country_name_charts} in the last 14 days", size=10)
+
+    global_deaths = sns.barplot(x='deaths', y='dateRep', palette='PuBuGn', data=result, ax=axs[1])
+
+    for p in global_deaths.patches:
+        width = p.get_width()  # get bar length
+        global_deaths.text(width + 1,  # set the text at 1 unit right of the bar
+                p.get_y() + p.get_height() / 2,  # get Y coordinate + X coordinate / 2
+                '{:1.0f}'.format(width),  # set variable to display, 2 decimals
+                ha='left',  # horizontal alignment
+                va='center') # vertical alignment
+
+    axs[1].set_xlabel('Number of deaths', size=14)
+    axs[1].set_ylabel('', size=14)
+    axs[1].grid(axis="x", linestyle='dashed', color='w')
+    axs[1].set_title(f"The total number of deaths in {country_name_charts} in the last 14 days", size=10)
+
+    for label in axs[0].get_xmajorticklabels() + axs[1].get_xmajorticklabels():
+        label.set_rotation(30)
+        label.set_horizontalalignment("right")
+
+    plt.tight_layout()
+    plt.show()
+
+################################################################
+
+read_file()
+country_name_charts = check_country_charts()
+last_14_days(country_name_charts)
+#the_most_country_charts(country_name_charts)
+#cases_deaths_country_charts(country_name_charts)
+
