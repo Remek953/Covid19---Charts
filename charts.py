@@ -3,12 +3,14 @@ from matplotlib import pyplot as plt
 import seaborn as sns
 import datetime
 import requests
+import random
 
 
 #6 - Download newest file
 def download_file():
+    """Download the latest data from https://www.ecdc.europa.eu"""
     url = r'https://opendata.ecdc.europa.eu/covid19/casedistribution/csv'
-    print("Downloading newest file. Please wait.")
+    print("Download the latest file. Please wait.")
     r = requests.get(url, allow_redirects=True)
     open('covid.csv', 'wb').write(r.content)
     print("Download Completed.")
@@ -29,6 +31,7 @@ def read_file():
 
 #3 - List of the Countries
 def list_of_countries():
+    """List of the countries in the covid.csv"""
     countries = []
     for item in df['Country'].unique():
         countries.append(item.title())
@@ -40,6 +43,7 @@ def list_of_countries():
 ################################################################
 #1 - Global Info
 
+
 def date_info():
     df_info = df.copy()
     df_info['dateRep'] = df_info['dateRep'].dt.date
@@ -50,6 +54,7 @@ def date_info():
     print(f"The total number of deaths: {df_info['deaths'].sum()}.\n")
 
 def the_most_global():
+    """The 5 countries with the highest total cases and deaths"""
     country_grp = df.groupby(['Country']).sum()
     cases = country_grp['cases'].nlargest(5)
     deaths = country_grp['deaths'].nlargest(5)
@@ -58,6 +63,7 @@ def the_most_global():
 
 
 def the_most_global_daily():
+    """The 5 countries with the highest daily number of cases and deaths in the World"""
     sub_df = df.copy()
     sub_df.set_index('dateRep', inplace=True)
     country_group = sub_df.groupby(['Country'])
@@ -68,6 +74,7 @@ def the_most_global_daily():
 
 
 def the_most_ratio():
+    """The 5 countries of the highest total deaths/cases ratio in the World"""
     country_group = df.groupby(['Country']).sum()
     country_group['death/cases'] = (country_group['deaths'] / country_group['cases']) * 100
     ratio = country_group['death/cases'].nlargest(5).round(2).astype(str) + '%'
@@ -78,6 +85,7 @@ def the_most_ratio():
 
 
 def total_country_charts():
+    """The 5 countries with the highest total cases and deaths"""
     fig, axs = plt.subplots(ncols=2, figsize=(10,8))
 
     grouped_values = df.groupby('Country').sum().reset_index()
@@ -125,6 +133,7 @@ def total_country_charts():
 
 
 def total_numbers_charts():
+    """The total number of cases and deaths over months"""
     groupedmonths = df.groupby(df['dateRep'].dt.to_period('M')).sum()
     groupedmonths = groupedmonths.resample('M').asfreq().fillna(0)
     groupedmonths['dateRep']=groupedmonths.index
@@ -170,6 +179,7 @@ def total_numbers_charts():
 
 
 def cases_deaths_charts():
+    """The total number of cases and deaths over months in one chart"""
     pd.plotting.register_matplotlib_converters()
     groupedmonths = df.groupby(df['dateRep'].dt.to_period('M')).sum()
     groupedmonths = groupedmonths.resample('M').asfreq().fillna(0)
@@ -204,6 +214,63 @@ def cases_deaths_charts():
     plt.show()
 
 
+def random_10():
+    """10 random countries with total number of cases and deaths over months"""
+    countries = []
+    for item in df['Country'].unique():
+        countries.append(item.title())
+
+    random_countries = random.sample(countries, 10)
+
+    newDF = pd.DataFrame()  # creates a new dataframe that's empty
+
+    for random_country in random_countries:
+        pd.plotting.register_matplotlib_converters()
+        country_name = (df['Country'] == random_country)
+        country = df.loc[country_name]
+
+        groupedmonths = country.groupby(country['dateRep'].dt.to_period('M')).sum()
+        groupedmonths = groupedmonths.resample('M').asfreq().fillna(0)
+        groupedmonths['dateRep'] = groupedmonths.index
+        groupedmonths['Country'] = random_country
+        newDF = newDF.append(groupedmonths, ignore_index=True)
+
+    newDF['dateRep'] = newDF['dateRep'].astype(str)
+    newDF['dateRep'] = pd.to_datetime(newDF['dateRep'])
+    newDF = newDF.sort_values(by=['Country'])
+
+    fig, axs = plt.subplots(ncols=2, figsize=(10, 8))
+    global_cases = sns.lineplot(x='dateRep', y='cases', palette='bright', data=newDF, hue='Country', marker='o', ax=axs[0])
+
+    from matplotlib import dates
+    axs[0].ticklabel_format(style='plain', axis='y')
+    axs[0].set_xlabel('Date', size=14)
+    axs[0].set_ylabel('Number of cases', size=14)
+    axs[0].grid(axis="y",linestyle='dashed', color='b')
+    axs[0].grid(axis="x", linestyle='dashed', color='gray')
+    axs[0].set_title("10 random countries with total number of cases over months", size=10)
+    axs[0].set(xticks=newDF.dateRep.values)
+    axs[0].xaxis.set_major_formatter(dates.DateFormatter("%b-%Y"))
+
+    global_deaths = sns.lineplot(x='dateRep', y='deaths', palette='bright', data=newDF, hue='Country', marker='o', ax=axs[1])
+
+    axs[1].set_xlabel('Date', size=14)
+    axs[1].set_ylabel('Number of deaths', size=14)
+    axs[1].grid(axis="y", linestyle='dashed', color='b')
+    axs[1].grid(axis="x", linestyle='dashed', color='gray')
+    axs[1].set_title("10 random countries with total number of deaths over months", size=10)
+    axs[1].set(xticks=newDF.dateRep.values)
+    axs[1].xaxis.set_major_formatter(dates.DateFormatter("%b-%Y"))
+
+
+    for label in axs[0].get_xmajorticklabels() + axs[1].get_xmajorticklabels():
+        label.set_rotation(30)
+        label.set_horizontalalignment("right")
+
+    plt.tight_layout()
+    plt.show()
+
+
 ################################################################
 #4 - Choose Country - Info
 
@@ -223,6 +290,7 @@ def check_country():
 
 
 def the_most_country(country_name):
+    """Total number of cases and deaths for the selected country"""
     country_grp = df.groupby(['Country']).sum()
     cases = country_grp.loc[country_name]['cases'].astype(int).astype(str)
     deaths = country_grp.loc[country_name]['deaths'].astype(int).astype(str)
@@ -231,6 +299,7 @@ def the_most_country(country_name):
 
 
 def the_most_country_daily(country_name):
+    """The 5 days with the highest number of cases and deaths for the selected country"""
     df.set_index('dateRep', inplace=True)
     name = (df['Country'] == country_name)
     cases = df.loc[name]['cases'].nlargest(5)
@@ -240,6 +309,7 @@ def the_most_country_daily(country_name):
 
 
 def the_country_ratio(country_name):
+    """The deaths/cases ratio for the seleceted country"""
     country_group = df.groupby(['Country']).sum()
     country_group['death/cases'] = (country_group['deaths'] / country_group['cases']) * 100
     ratio = country_group.loc[country_name]['death/cases'].round(2).astype(str) + '%'
@@ -266,7 +336,7 @@ def check_country_charts():
 
 
 def the_most_country_charts(country_name_charts):
-
+    """The total number of cases and deaths in selected country"""
     country_name = (df['Country'] == country_name_charts)
     country = df.loc[country_name]
 
@@ -315,6 +385,7 @@ def the_most_country_charts(country_name_charts):
 
 
 def cases_deaths_country_charts(country_name_charts):
+    """The total number of cases and deaths in one chart for the selected country"""
     pd.plotting.register_matplotlib_converters()
     country_name = (df['Country'] == country_name_charts)
     country = df.loc[country_name]
@@ -353,6 +424,7 @@ def cases_deaths_country_charts(country_name_charts):
 
 
 def last_14_days(country_name_charts):
+    """Total number of cases and deaths for the selected country in the last 14 days"""
     pd.plotting.register_matplotlib_converters()
     country_name = (df['Country'] == country_name_charts)
     country = df.loc[country_name]
@@ -402,6 +474,3 @@ def last_14_days(country_name_charts):
     plt.show()
 
 ################################################################
-
-
-
