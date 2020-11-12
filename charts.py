@@ -5,6 +5,7 @@ import datetime
 import requests
 
 
+#6 - Download newest file
 def download_file():
     url = r'https://opendata.ecdc.europa.eu/covid19/casedistribution/csv'
     print("Downloading newest file. Please wait.")
@@ -26,6 +27,19 @@ def read_file():
         read_file()
 
 
+#3 - List of the Countries
+def list_of_countries():
+    countries = []
+    for item in df['Country'].unique():
+        countries.append(item.title())
+    countries.sort()
+    for country in countries:
+        print(country)
+
+
+################################################################
+#1 - Global Info
+
 def date_info():
     df_info = df.copy()
     df_info['dateRep'] = df_info['dateRep'].dt.date
@@ -35,16 +49,6 @@ def date_info():
     print(f"The total number of cases: {df_info['cases'].sum()}.")
     print(f"The total number of deaths: {df_info['deaths'].sum()}.\n")
 
-
-def list_of_countries():
-    countries = []
-    for item in df['Country'].unique():
-        countries.append(item.title())
-    countries.sort()
-    print(countries)
-
-
-################################################################
 def the_most_global():
     country_grp = df.groupby(['Country']).sum()
     cases = country_grp['cases'].nlargest(5)
@@ -69,67 +73,11 @@ def the_most_ratio():
     ratio = country_group['death/cases'].nlargest(5).round(2).astype(str) + '%'
     print(f'\nThe 5 countries of the highest total deaths/cases ratio in the World:\n{ratio.to_string(header=False)}')
 
-
-"""
-read_file()
-date_info()
-the_most_global()
-the_most_global_daily()
-the_most_ratio()
-"""
 ################################################################
+#2 - Global Charts
 
 
-def check_country():
-    name = str(input("Please enter country name: "))
-    countries = []
-    for item in df['Country'].unique():
-        countries.append(item.title())
-
-    while name.title() not in countries:
-        if name.lower() == 'x':
-            print('success')
-            break
-        print("Wrong.")
-        name = input("Please enter valid country name or enter 'x' to exit.")
-    return name.title()
-
-
-def the_most_country(country_name):
-    country_grp = df.groupby(['Country']).sum()
-    cases = country_grp.loc[country_name]['cases'].astype(int).astype(str)
-    deaths = country_grp.loc[country_name]['deaths'].astype(int).astype(str)
-    print(f'{country_name} has total {cases} cases.')
-    print(f'{country_name} has total {deaths} deaths.')
-
-
-def the_most_country_daily(country_name):
-    df.set_index('dateRep', inplace=True)
-    name = (df['Country'] == country_name)
-    cases = df.loc[name]['cases'].nlargest(5)
-    deaths = df.loc[name]['deaths'].nlargest(5)
-    print(f'\nThe 5 days with the highest number of cases in the {country_name}:\n{cases.to_string(header=False)}')
-    print(f'\nThe 5 days with the highest number of deaths in the {country_name}:\n{deaths.to_string(header=False)}')
-
-
-def the_country_ratio(country_name):
-    country_group = df.groupby(['Country']).sum()
-    country_group['death/cases'] = (country_group['deaths'] / country_group['cases']) * 100
-    ratio = country_group.loc[country_name]['death/cases'].round(2).astype(str) + '%'
-    print(f'\nThe deaths/cases ratio in the {country_name} is {ratio}.')
-
-"""
-read_file()
-country_name = 'Poland'
-the_most_country(country_name)
-the_most_country_daily(country_name)
-the_country_ratio(country_name)
-"""
-
-################################################################
-
-
-def the_most_country_charts():
+def total_country_charts():
     fig, axs = plt.subplots(ncols=2, figsize=(10,8))
 
     grouped_values = df.groupby('Country').sum().reset_index()
@@ -249,12 +197,57 @@ def cases_deaths_charts():
     ax2 = ax1.twinx()
     color = 'tab:red'
 
-    ax2 = sns.lineplot(x=groupedmonths['dateRep'].dt.to_timestamp('s').dt.strftime('%Y-%m'), y='deaths', data=groupedmonths, sort=False, color=color,  marker='o', ax=ax2)
+    ax2 = sns.lineplot(x=groupedmonths['dateRep'].dt.to_timestamp('s').dt.strftime('%Y-%m'), y='deaths',
+                       data=groupedmonths, sort=False, color=color,  marker='o', ax=ax2)
     ax2.set_ylabel('Number of deaths ', fontsize=14, color=color)
     ax2.tick_params(axis='y', color=color)
     plt.show()
 
+
 ################################################################
+#4 - Choose Country - Info
+
+
+def check_country():
+    name = str(input("Please enter country name: "))
+    countries = []
+    for item in df['Country'].unique():
+        countries.append(item.title())
+
+    while name.title() not in countries:
+        if name.lower() == 'x':
+            break
+        print("Wrong.")
+        name = input("Please enter valid country name or enter 'x' to exit.")
+    return name.title()
+
+
+def the_most_country(country_name):
+    country_grp = df.groupby(['Country']).sum()
+    cases = country_grp.loc[country_name]['cases'].astype(int).astype(str)
+    deaths = country_grp.loc[country_name]['deaths'].astype(int).astype(str)
+    print(f'{country_name} has total {cases} cases.')
+    print(f'{country_name} has total {deaths} deaths.')
+
+
+def the_most_country_daily(country_name):
+    df.set_index('dateRep', inplace=True)
+    name = (df['Country'] == country_name)
+    cases = df.loc[name]['cases'].nlargest(5)
+    deaths = df.loc[name]['deaths'].nlargest(5)
+    print(f'\nThe 5 days with the highest number of cases in the {country_name}:\n{cases.to_string(header=False)}')
+    print(f'\nThe 5 days with the highest number of deaths in the {country_name}:\n{deaths.to_string(header=False)}')
+
+
+def the_country_ratio(country_name):
+    country_group = df.groupby(['Country']).sum()
+    country_group['death/cases'] = (country_group['deaths'] / country_group['cases']) * 100
+    ratio = country_group.loc[country_name]['death/cases'].round(2).astype(str) + '%'
+    print(f'\nThe deaths/cases ratio in the {country_name} is {ratio}.')
+
+
+################################################################
+#5 - Choose Country - Charts
 
 
 def check_country_charts():
@@ -352,7 +345,8 @@ def cases_deaths_country_charts(country_name_charts):
     ax2 = ax1.twinx()
     color = 'tab:red'
 
-    ax2 = sns.lineplot(x=groupedmonths['dateRep'].dt.to_timestamp('s').dt.strftime('%Y-%m'), y='deaths', data=groupedmonths, sort=False, color=color,  marker='o', ax=ax2)
+    ax2 = sns.lineplot(x=groupedmonths['dateRep'].dt.to_timestamp('s').dt.strftime('%Y-%m'), y='deaths',
+                       data=groupedmonths, sort=False, color=color,  marker='o', ax=ax2)
     ax2.set_ylabel('Number of deaths ', fontsize=14, color=color)
     ax2.tick_params(axis='y', color=color)
     plt.show()
@@ -409,9 +403,5 @@ def last_14_days(country_name_charts):
 
 ################################################################
 
-read_file()
-country_name_charts = check_country_charts()
-last_14_days(country_name_charts)
-#the_most_country_charts(country_name_charts)
-#cases_deaths_country_charts(country_name_charts)
+
 
