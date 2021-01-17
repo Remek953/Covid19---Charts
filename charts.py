@@ -432,7 +432,7 @@ def last_14_days(country_name_charts):
     groupeddays = country.groupby(country['dateRep'].dt.to_period('D')).sum()
     groupeddays = groupeddays.resample('D').asfreq().fillna(0)
     groupeddays['dateRep'] = groupeddays.index
-    days_14 = datetime.datetime.now() - pd.to_timedelta("14day")
+    days_14 = max(groupeddays['dateRep']) - pd.to_timedelta("14day")
     result = groupeddays[groupeddays.dateRep > days_14.strftime('%d/%m/%y')]
 
     fig, axs = plt.subplots(ncols=2, figsize=(10, 8))

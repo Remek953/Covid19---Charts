@@ -17,11 +17,13 @@ Testing.ipynb - I use Jupyter for data manipulation and analysis and to create c
 ## Project setup
 Before start the project, you must install libraries for Python. Open Windows Command Line and type:
 ```sh
-pip install pandas 
-pip install matplotlib 
-pip install seaborn 
-pip install requests
+pip install -r requirements.txt
 ```
+
+After installation the necessary libraries, type in the Windows Command Line:
+```sh
+python Main.py
+``` 
 
 ## Data
 Data is from [European Centre for Disease Prevention and Control](https://www.ecdc.europa.eu/en)
